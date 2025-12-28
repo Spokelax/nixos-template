@@ -39,6 +39,7 @@ done
 # ==============================================================================
 
 TARGET_DISK=""
+EFI_PART=""
 BOOT_PART=""
 ROOT_PART=""
 HOSTNAME=""
@@ -63,8 +64,8 @@ print_warning_banner() {
 print_steps_overview() {
     printf "\n"
     printf "  %sThis script will:%s\n" "$C_WHITE_BOLD" "$C_RESET"
-    printf "    %s1.%s Partition disk (GPT, ESP + root)\n" "$C_DIM" "$C_RESET"
-    printf "    %s2.%s Format (FAT32 boot, ext4 root)\n" "$C_DIM" "$C_RESET"
+    printf "    %s1.%s Partition disk (GPT, ESP + boot + root)\n" "$C_DIM" "$C_RESET"
+    printf "    %s2.%s Format (FAT32 EFI, ext4 boot, ext4 root)\n" "$C_DIM" "$C_RESET"
     printf "    %s3.%s Clone nixos-template from GitHub\n" "$C_DIM" "$C_RESET"
     printf "    %s4.%s Generate hardware config\n" "$C_DIM" "$C_RESET"
     printf "    %s5.%s Run nixos-install\n" "$C_DIM" "$C_RESET"
@@ -106,11 +107,13 @@ detect_disk() {
 set_partition_names() {
     # NVMe uses 'p' prefix for partitions, SATA/SCSI doesn't
     if [[ "$TARGET_DISK" == /dev/nvme* ]]; then
-        BOOT_PART="${TARGET_DISK}p1"
-        ROOT_PART="${TARGET_DISK}p2"
+        EFI_PART="${TARGET_DISK}p1"
+        BOOT_PART="${TARGET_DISK}p2"
+        ROOT_PART="${TARGET_DISK}p3"
     else
-        BOOT_PART="${TARGET_DISK}1"
-        ROOT_PART="${TARGET_DISK}2"
+        EFI_PART="${TARGET_DISK}1"
+        BOOT_PART="${TARGET_DISK}2"
+        ROOT_PART="${TARGET_DISK}3"
     fi
 }
 
@@ -119,13 +122,15 @@ partition_disk() {
     parted -s "$TARGET_DISK" -- mklabel gpt
     parted -s "$TARGET_DISK" -- mkpart ESP fat32 1MB 512MB
     parted -s "$TARGET_DISK" -- set 1 esp on
-    parted -s "$TARGET_DISK" -- mkpart primary 512MB 100%
+    parted -s "$TARGET_DISK" -- mkpart boot ext4 512MB 1536MB
+    parted -s "$TARGET_DISK" -- mkpart primary 1536MB 100%
     print_success "Partitioned disk"
 }
 
 format_disk() {
     print_info "Formatting partitions..."
-    mkfs.fat -F 32 -n boot "$BOOT_PART"
+    mkfs.fat -F 32 -n EFI "$EFI_PART"
+    mkfs.ext4 -L boot "$BOOT_PART"
     mkfs.ext4 -L nixos "$ROOT_PART"
     udevadm settle
     print_success "Formatted partitions"
@@ -136,6 +141,8 @@ mount_disk() {
     mount /dev/disk/by-label/nixos /mnt
     mkdir -p /mnt/boot
     mount /dev/disk/by-label/boot /mnt/boot
+    mkdir -p /mnt/boot/efi
+    mount /dev/disk/by-label/EFI /mnt/boot/efi
     print_success "Mounted filesystems"
 }
 
