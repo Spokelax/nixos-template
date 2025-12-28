@@ -187,8 +187,12 @@ EOF
     git -C /mnt/etc/nixos config user.email "nixos@localhost"
     git -C /mnt/etc/nixos config user.name "NixOS Installer"
     git -C /mnt/etc/nixos add hosts/
-    git -C /mnt/etc/nixos commit -m "Add host config"
-    print_success "Hosts committed"
+    if ! git -C /mnt/etc/nixos diff --cached --quiet; then
+        git -C /mnt/etc/nixos commit -m "Add host config"
+        print_success "Hosts committed"
+    else
+        print_success "Host config already tracked"
+    fi
 }
 
 run_install() {
