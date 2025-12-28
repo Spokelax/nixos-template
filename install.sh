@@ -125,6 +125,7 @@ format_disk() {
     print_info "Formatting partitions..."
     mkfs.fat -F 32 -n boot "$BOOT_PART"
     mkfs.ext4 -L nixos "$ROOT_PART"
+    udevadm settle
     print_success "Formatted partitions"
 }
 
