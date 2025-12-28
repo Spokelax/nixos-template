@@ -77,7 +77,7 @@ create_default_nix() {
 { mkHost }:
 
 {
-  $NEW_HOSTNAME = mkHost {
+  "$NEW_HOSTNAME" = mkHost {
     hostname = "$NEW_HOSTNAME";
     system = "x86_64-linux";
     modules = [
