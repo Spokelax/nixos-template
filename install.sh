@@ -5,7 +5,8 @@
 # Automated NixOS installation for VMs
 #
 # Usage:
-#   curl -sL https://raw.githubusercontent.com/Spokelax/nixos-template/master/install.sh | sudo bash
+#   curl -sL https://raw.githubusercontent.com/Spokelax/nixos-template/main/install.sh | sudo bash
+#   curl -sL .../install.sh | sudo bash -s -- <branch>  # specific branch
 # ==============================================================================
 
 set -e
@@ -14,7 +15,8 @@ set -e
 # Setup
 # ==============================================================================
 
-REPO_RAW="https://raw.githubusercontent.com/Spokelax/nixos-template/master"
+REPO_BRANCH="${1:-main}"
+REPO_RAW="https://raw.githubusercontent.com/Spokelax/nixos-template/$REPO_BRANCH"
 REPO_GIT="https://github.com/Spokelax/nixos-template.git"
 INSTALL_DIR=$(mktemp -d /tmp/nixos-install.XXXXXX)
 
@@ -139,7 +141,7 @@ mount_disk() {
 
 clone_template() {
     print_info "Cloning template..."
-    git clone "$REPO_GIT" /mnt/etc/nixos
+    git clone -b "$REPO_BRANCH" "$REPO_GIT" /mnt/etc/nixos
     print_success "Cloned to /mnt/etc/nixos"
 }
 
