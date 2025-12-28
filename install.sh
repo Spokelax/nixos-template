@@ -114,10 +114,10 @@ set_partition_names() {
 
 partition_disk() {
     print_info "Partitioning $TARGET_DISK..."
-    parted "$TARGET_DISK" -- mklabel gpt
-    parted "$TARGET_DISK" -- mkpart ESP fat32 1MB 512MB
-    parted "$TARGET_DISK" -- set 1 esp on
-    parted "$TARGET_DISK" -- mkpart primary 512MB 100%
+    parted -s "$TARGET_DISK" -- mklabel gpt
+    parted -s "$TARGET_DISK" -- mkpart ESP fat32 1MB 512MB
+    parted -s "$TARGET_DISK" -- set 1 esp on
+    parted -s "$TARGET_DISK" -- mkpart primary 512MB 100%
     print_success "Partitioned disk"
 }
 
