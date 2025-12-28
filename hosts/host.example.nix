@@ -15,7 +15,7 @@
 { mkHost }:
 
 {
-  my-host = mkHost {
+  "my-host" = mkHost {
     hostname = "my-host";
     system = "x86_64-linux";
     modules = [
