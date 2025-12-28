@@ -180,6 +180,12 @@ EOF
 }
 EOF
     print_success "Created host config for: $HOSTNAME"
+
+    # Commit hosts for flake evaluation
+    print_info "Committing hosts..."
+    git -C /mnt/etc/nixos add hosts/
+    git -C /mnt/etc/nixos commit -m "Add host config"
+    print_success "Hosts committed"
 }
 
 run_install() {

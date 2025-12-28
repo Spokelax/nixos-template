@@ -1,6 +1,6 @@
 # Hosts
 
-VM-specific configuration. This folder is gitignored (except examples).
+VM-specific configuration.
 
 ## After Cloning a Template VM
 
@@ -14,6 +14,20 @@ sudo ./onboarding.sh
 ## Manual Setup
 
 See `host.example.nix` for step-by-step instructions.
+
+## Tracking Changes
+
+Nix flakes only see git-tracked files. After modifying your config:
+
+```bash
+git add -A && git commit -m "message"
+```
+
+Or stage without committing (flake will warn about dirty tree):
+
+```bash
+git add -A
+```
 
 ## Structure
 
@@ -30,4 +44,12 @@ Edit `config.nix` to add host-specific configuration, then rebuild:
 
 ```bash
 rebuild
+```
+
+## Updating
+
+Pull template updates:
+
+```bash
+git pull
 ```
