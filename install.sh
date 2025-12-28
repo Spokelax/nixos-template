@@ -252,6 +252,7 @@ main() {
     printf "\n"
     printf "  %sConfig ready at:%s /mnt/etc/nixos\n" "$C_WHITE_BOLD" "$C_RESET"
     printf "  %sYou can inspect or modify before continuing.%s\n" "$C_DIM" "$C_RESET"
+    printf "  %sTip: Edit flake.nix to change nixpkgs channel (default: unstable).%s\n" "$C_DIM" "$C_RESET"
     printf "\n"
     if ! prompt_yes_no "Run nixos-install?"; then
         print_info "Stopped before install. Mounts preserved."
