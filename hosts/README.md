@@ -8,7 +8,7 @@ Run onboarding to set hostname and regenerate hardware config:
 
 ```bash
 cd /etc/nixos
-./onboarding.sh
+sudo ./onboarding.sh
 ```
 
 ## Manual Setup

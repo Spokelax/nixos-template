@@ -7,7 +7,7 @@ Flake-based NixOS template for VMs.
 Boot the NixOS installer and run:
 
 ```bash
-curl -sL https://raw.githubusercontent.com/Spokelax/nixos-template/master/install.sh | bash
+curl -sL https://raw.githubusercontent.com/Spokelax/nixos-template/master/install.sh | sudo bash
 ```
 
 Default hostname is `nixos-template` (for Proxmox template creation). Override if installing directly.

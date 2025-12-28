@@ -5,7 +5,7 @@
 # Automated NixOS installation for VMs
 #
 # Usage:
-#   curl -sL https://raw.githubusercontent.com/Spokelax/nixos-template/master/install.sh | bash
+#   curl -sL https://raw.githubusercontent.com/Spokelax/nixos-template/master/install.sh | sudo bash
 # ==============================================================================
 
 set -e
