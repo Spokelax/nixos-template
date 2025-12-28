@@ -183,6 +183,8 @@ EOF
 
     # Commit hosts for flake evaluation
     print_info "Committing hosts..."
+    git -C /mnt/etc/nixos config user.email "nixos@localhost"
+    git -C /mnt/etc/nixos config user.name "NixOS Installer"
     git -C /mnt/etc/nixos add hosts/
     git -C /mnt/etc/nixos commit -m "Add host config"
     print_success "Hosts committed"
