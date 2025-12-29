@@ -20,7 +20,7 @@
     modules = [
       ./hardware.nix
 
-      ({ ... }: {
+      ({ pkgs, ... }: {
         # ----------------------------------------------------------------------
         # Users
         # ----------------------------------------------------------------------
@@ -41,6 +41,9 @@
 
           # Option 2: SSH key
           # openssh.authorizedKeys.keys = [ "ssh-ed25519 AAAA..." ];
+
+          # Optional: Use zsh (oh-my-zsh configured in base)
+          # shell = pkgs.zsh;
         };
 
         # Optional: Disable SSH password auth (SSH key only)

@@ -42,6 +42,7 @@ NEW_PASSWORD_HASH=""
 AUTH_METHOD=""  # "password" or "sshkey"
 REPLACE_DEFAULT_USER=false
 DISABLE_PASSWORD_AUTH=false
+USE_ZSH=false
 
 # ==============================================================================
 # Setup functions
@@ -49,12 +50,17 @@ DISABLE_PASSWORD_AUTH=false
 
 check_existing() {
     if [ -f "$HOSTS_DIR/config.nix" ]; then
-        print_warning "config.nix exists"
-        if ! prompt_yes_no "Overwrite existing configuration?"; then
-            print_info "Aborted by user"
-            exit 0
+        # Check if config has real user (authorizedKeys or real password hash)
+        if grep -qE 'authorizedKeys|hashedPassword = "\$' "$HOSTS_DIR/config.nix" 2>/dev/null; then
+            print_warning "Existing user configuration detected"
+            if ! prompt_yes_no "Overwrite existing configuration?"; then
+                print_info "Aborted by user"
+                exit 0
+            fi
+            print_success "Will overwrite existing config"
+        else
+            print_success "Fresh install detected"
         fi
-        print_success "Will overwrite existing config"
     else
         print_success "No existing configuration"
     fi
@@ -67,6 +73,12 @@ create_host_config() {
         user_auth_config="openssh.authorizedKeys.keys = [ \"$NEW_SSH_KEY\" ];"
     else
         user_auth_config="hashedPassword = \"$NEW_PASSWORD_HASH\";"
+    fi
+
+    # Build shell config
+    local shell_config=""
+    if [ "$USE_ZSH" = true ]; then
+        shell_config="shell = pkgs.zsh;"
     fi
 
     # Build SSH password auth config
@@ -92,7 +104,7 @@ create_host_config() {
     modules = [
       ./hardware.nix
 
-      ({ ... }: {
+      ({ pkgs, ... }: {
         # Disable bootstrap user
         users.users.default = {
           isNormalUser = false;
@@ -104,6 +116,7 @@ create_host_config() {
           isNormalUser = true;
           extraGroups = [ "wheel" ];
           $user_auth_config
+          $shell_config
         };$ssh_password_config
       })
     ];
@@ -263,6 +276,15 @@ main() {
             # Hash password
             NEW_PASSWORD_HASH=$(echo "$user_password" | mkpasswd -m sha-512 --stdin)
             print_success "Password configured"
+        fi
+
+        # Ask about zsh shell
+        printf "\n"
+        if prompt_yes_no "Use zsh with oh-my-zsh? (recommended)"; then
+            USE_ZSH=true
+            print_success "Shell: zsh"
+        else
+            print_info "Shell: bash"
         fi
     else
         print_info "Keeping default user (default/pwd)"

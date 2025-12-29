@@ -1,5 +1,6 @@
 {
   lib,
+  pkgs,
   ...
 }:
 
@@ -15,5 +16,6 @@
     isNormalUser = true;
     extraGroups = [ "wheel" ];
     initialPassword = "pwd";
+    shell = pkgs.zsh;
   };
 }
