@@ -56,11 +56,15 @@ hosts/
 
 ## Adding Services
 
-Edit `config.nix` to add host-specific configuration, then run:
+Edit `config.nix` to add host-specific configuration, then rebuild:
 
 ```bash
-nixos-switch
+sudo nixos-rebuild switch --flake /etc/nixos
 ```
+
+> [!TIP]
+> Or use ```nixos-switch```
+> (custom switch script that includes [nix-output-monitor](https://github.com/maralorn/nix-output-monitor))
 
 &nbsp;
 
