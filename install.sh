@@ -149,6 +149,7 @@ mount_disk() {
 clone_template() {
     print_info "Cloning template..."
     git clone -b "$REPO_BRANCH" "$REPO_GIT" /mnt/etc/nixos
+    git config --system --add safe.directory /etc/nixos
     print_success "Cloned to /mnt/etc/nixos"
 }
 
