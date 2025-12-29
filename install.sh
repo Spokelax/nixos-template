@@ -150,6 +150,7 @@ clone_template() {
     print_info "Cloning template..."
     git clone -b "$REPO_BRANCH" "$REPO_GIT" /mnt/etc/nixos
     git config --file /mnt/etc/gitconfig --add safe.directory /etc/nixos
+    git -C /mnt/etc/nixos config pull.rebase true
     print_success "Cloned to /mnt/etc/nixos"
 }
 

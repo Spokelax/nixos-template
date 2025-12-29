@@ -69,5 +69,5 @@ nixos-switch
 Pull template updates:
 
 ```bash
-git pull
+sudo git pull
 ```
