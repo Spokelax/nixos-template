@@ -25,7 +25,7 @@ For custom setups:
 3. **Mount** - `/mnt`, `/mnt/boot`, `/mnt/boot/efi`
 4. **Clone** - `git clone https://github.com/Spokelax/nixos-template.git /mnt/etc/nixos`
 5. **Hardware config** - `nixos-generate-config --show-hardware-config > /mnt/etc/nixos/hosts/hardware.nix`
-6. **Host config** - Create `hosts/default.nix` (see `hosts/host.example.nix`)
+6. **Host config** - Create `hosts/config.nix` (see `hosts/config.example.nix`)
 
 > [!TIP]
 > Default channel is `nixos-unstable`. To use stable, edit `flake.nix` before install:

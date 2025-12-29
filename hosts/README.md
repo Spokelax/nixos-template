@@ -24,7 +24,7 @@ Onboarding will:
 
 ## Manual Setup
 
-See `host.example.nix` for step-by-step instructions.
+See `config.example.nix` for step-by-step instructions.
 
 &nbsp;
 
@@ -48,8 +48,7 @@ git add -A
 
 ```text
 hosts/
-├── default.nix   # Host index (hostname → config)
-├── config.nix    # Host-specific settings
+├── config.nix    # Host configuration (hostname, users, services)
 └── hardware.nix  # Generated hardware config
 ```
 

@@ -149,7 +149,7 @@ mount_disk() {
 clone_template() {
     print_info "Cloning template..."
     git clone -b "$REPO_BRANCH" "$REPO_GIT" /mnt/etc/nixos
-    git config --system --add safe.directory /etc/nixos
+    git config --file /mnt/etc/gitconfig --add safe.directory /etc/nixos
     print_success "Cloned to /mnt/etc/nixos"
 }
 
@@ -160,9 +160,9 @@ generate_config() {
     print_success "Generated hardware.nix"
 
     print_info "Creating host config..."
-    cat > /mnt/etc/nixos/hosts/default.nix << EOF
+    cat > /mnt/etc/nixos/hosts/config.nix << EOF
 # ============================================================================
-# Host Index
+# Host Configuration
 # ============================================================================
 
 { mkHost }:
@@ -172,37 +172,24 @@ generate_config() {
     hostname = "$HOSTNAME";
     system = "x86_64-linux";
     modules = [
-      ./config.nix
       ./hardware.nix
+
+      ({ ... }: {
+        # Using bootstrap user: default / pwd
+        # Run onboarding.sh to create your user
+      })
     ];
   };
 }
 EOF
+    print_success "Created config.nix for: $HOSTNAME"
 
-    cat > /mnt/etc/nixos/hosts/config.nix << EOF
-# ============================================================================
-# Host Configuration
-# ============================================================================
-
-{ ... }:
-
-{
-  # Add host-specific configuration here
-}
-EOF
-    print_success "Created host config for: $HOSTNAME"
-
-    # Commit hosts for flake evaluation
-    print_info "Committing hosts..."
+    # Stage hosts for flake evaluation
+    print_info "Staging hosts..."
     git -C /mnt/etc/nixos config user.email "nixos@localhost"
     git -C /mnt/etc/nixos config user.name "NixOS Installer"
     git -C /mnt/etc/nixos add hosts/
-    if ! git -C /mnt/etc/nixos diff --cached --quiet; then
-        git -C /mnt/etc/nixos commit -m "Add host config"
-        print_success "Hosts committed"
-    else
-        print_success "Host config already tracked"
-    fi
+    print_success "Hosts staged"
 }
 
 run_install() {

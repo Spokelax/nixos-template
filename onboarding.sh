@@ -5,11 +5,10 @@
 # Interactive setup for new hosts
 #
 # Steps:
-#   1. Pre-checks (directory, nixos-generate-config, existing config)
+#   1. Pre-checks (directory, existing config)
 #   2. Configuration (hostname, optional user)
-#   3. Hardware configuration
-#   4. Create host files
-#   5. Apply configuration (optional)
+#   3. Create host files
+#   4. Apply configuration (optional)
 #
 # Usage:
 #   ./onboarding.sh
@@ -49,8 +48,8 @@ DISABLE_PASSWORD_AUTH=false
 # ==============================================================================
 
 check_existing() {
-    if [ -f "$HOSTS_DIR/default.nix" ]; then
-        print_warning "default.nix exists"
+    if [ -f "$HOSTS_DIR/config.nix" ]; then
+        print_warning "config.nix exists"
         if ! prompt_yes_no "Overwrite existing configuration?"; then
             print_info "Aborted by user"
             exit 0
@@ -61,21 +60,27 @@ check_existing() {
     fi
 }
 
-generate_hardware_config() {
-    print_info "Generating hardware configuration..."
-
-    if nixos-generate-config --show-hardware-config >"$HOSTS_DIR/hardware.nix" 2>/dev/null; then
-        print_success "Generated hardware.nix"
+create_host_config() {
+    # Build user config based on auth method
+    local user_auth_config=""
+    if [ "$AUTH_METHOD" = "sshkey" ]; then
+        user_auth_config="openssh.authorizedKeys.keys = [ \"$NEW_SSH_KEY\" ];"
     else
-        print_error "Failed to generate hardware config"
-        return 1
+        user_auth_config="hashedPassword = \"$NEW_PASSWORD_HASH\";"
     fi
-}
 
-create_default_nix() {
-    cat >"$HOSTS_DIR/default.nix" <<EOF
+    # Build SSH password auth config
+    local ssh_password_config=""
+    if [ "$DISABLE_PASSWORD_AUTH" = true ]; then
+        ssh_password_config="
+        # Disable password authentication (SSH key only)
+        services.openssh.settings.PasswordAuthentication = false;"
+    fi
+
+    if [ "$REPLACE_DEFAULT_USER" = true ]; then
+        cat >"$HOSTS_DIR/config.nix" <<EOF
 # ============================================================================
-# Host Index
+# Host Configuration
 # ============================================================================
 
 { mkHost }:
@@ -85,53 +90,24 @@ create_default_nix() {
     hostname = "$NEW_HOSTNAME";
     system = "x86_64-linux";
     modules = [
-      ./config.nix
       ./hardware.nix
+
+      ({ ... }: {
+        # Disable bootstrap user
+        users.users.default = {
+          isNormalUser = false;
+          hashedPassword = "!";
+        };
+
+        # Primary user
+        users.users.$NEW_USERNAME = {
+          isNormalUser = true;
+          extraGroups = [ "wheel" ];
+          $user_auth_config
+        };$ssh_password_config
+      })
     ];
   };
-}
-EOF
-    print_success "Created default.nix"
-}
-
-create_config_nix() {
-    if [ "$REPLACE_DEFAULT_USER" = true ]; then
-        # Build user config based on auth method
-        local user_auth_config=""
-        if [ "$AUTH_METHOD" = "sshkey" ]; then
-            user_auth_config="openssh.authorizedKeys.keys = [ \"$NEW_SSH_KEY\" ];"
-        else
-            user_auth_config="hashedPassword = \"$NEW_PASSWORD_HASH\";"
-        fi
-
-        # Build password auth config
-        local ssh_password_config=""
-        if [ "$DISABLE_PASSWORD_AUTH" = true ]; then
-            ssh_password_config="
-  # Disable password authentication (SSH key only)
-  services.openssh.settings.PasswordAuthentication = false;"
-        fi
-
-        cat >"$HOSTS_DIR/config.nix" <<EOF
-# ============================================================================
-# Host Configuration
-# ============================================================================
-
-{ ... }:
-
-{
-  # Disable bootstrap user
-  users.users.default = {
-    isNormalUser = false;
-    hashedPassword = "!";  # Locked account
-  };
-
-  # Primary user
-  users.users.$NEW_USERNAME = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" ];
-    $user_auth_config
-  };$ssh_password_config
 }
 EOF
     else
@@ -140,24 +116,34 @@ EOF
 # Host Configuration
 # ============================================================================
 
-{ ... }:
+{ mkHost }:
 
 {
-  # Using bootstrap user: default / pwd
-  # Replace with your own user when ready:
-  #
-  # users.users.default = {
-  #   isNormalUser = false;
-  #   hashedPassword = "!";
-  # };
-  #
-  # users.users.myuser = {
-  #   isNormalUser = true;
-  #   extraGroups = [ "wheel" ];
-  #   hashedPassword = "...";  # Generate with: mkpasswd -m sha-512
-  #   # or use SSH key:
-  #   # openssh.authorizedKeys.keys = [ "ssh-ed25519 ..." ];
-  # };
+  "$NEW_HOSTNAME" = mkHost {
+    hostname = "$NEW_HOSTNAME";
+    system = "x86_64-linux";
+    modules = [
+      ./hardware.nix
+
+      ({ ... }: {
+        # Using bootstrap user: default / pwd
+        # To replace with your own user, edit this file:
+        #
+        # users.users.default = {
+        #   isNormalUser = false;
+        #   hashedPassword = "!";
+        # };
+        #
+        # users.users.myuser = {
+        #   isNormalUser = true;
+        #   extraGroups = [ "wheel" ];
+        #   hashedPassword = "...";  # Generate with: mkpasswd -m sha-512
+        #   # or use SSH key:
+        #   # openssh.authorizedKeys.keys = [ "ssh-ed25519 ..." ];
+        # };
+      })
+    ];
+  };
 }
 EOF
     fi
@@ -170,21 +156,12 @@ EOF
 
 main() {
     print_header "NixOS Template · Onboarding"
-    steps_init 5
+    steps_init 4
 
     # --------------------------------------------------------------------------
     # Step 1: Pre-checks
     # --------------------------------------------------------------------------
     print_step "Pre-checks"
-
-    if command -v nixos-generate-config &>/dev/null; then
-        print_success "nixos-generate-config found"
-    else
-        print_error "nixos-generate-config not found"
-        print_info "Run this script on a NixOS system"
-        print_footer false "Setup failed"
-        exit 1
-    fi
 
     if [ ! -d "$HOSTS_DIR" ]; then
         mkdir -p "$HOSTS_DIR"
@@ -192,6 +169,14 @@ main() {
     else
         print_success "Hosts directory exists"
     fi
+
+    if [ ! -f "$HOSTS_DIR/hardware.nix" ]; then
+        print_error "hardware.nix not found"
+        print_info "Run install.sh first or generate manually"
+        print_footer false "Setup failed"
+        exit 1
+    fi
+    print_success "hardware.nix exists"
 
     check_existing
 
@@ -284,25 +269,17 @@ main() {
     fi
 
     # --------------------------------------------------------------------------
-    # Step 3: Generate hardware config
-    # --------------------------------------------------------------------------
-    print_step "Hardware Configuration"
-
-    if ! generate_hardware_config; then
-        print_footer false "Setup failed"
-        exit 1
-    fi
-
-    # --------------------------------------------------------------------------
-    # Step 4: Create host files
+    # Step 3: Create host files
     # --------------------------------------------------------------------------
     print_step "Host Files"
 
-    create_default_nix
-    create_config_nix
+    create_host_config
+
+    git -C "$SCRIPT_DIR" add hosts/
+    print_success "Hosts staged"
 
     # --------------------------------------------------------------------------
-    # Step 5: Apply configuration
+    # Step 4: Apply configuration
     # --------------------------------------------------------------------------
     print_step "Apply Configuration"
 
@@ -313,6 +290,22 @@ main() {
 
         if sudo nixos-rebuild switch --flake "$SCRIPT_DIR" --option experimental-features 'nix-command flakes'; then
             print_success "System configured successfully"
+
+            # Prompt for commit
+            printf "\n"
+            if prompt_yes_no "Commit changes?"; then
+                local default_msg="Add host: $NEW_HOSTNAME"
+                local commit_msg
+                commit_msg=$(prompt_input "Commit message" "$default_msg")
+                if [ -z "$commit_msg" ]; then
+                    commit_msg="$default_msg"
+                fi
+                git -C "$SCRIPT_DIR" commit -m "$commit_msg"
+                print_success "Changes committed"
+            else
+                print_info "Changes staged but not committed"
+            fi
+
             print_footer true "Setup completed"
 
             printf "    %sNext steps:%s\n" "$C_WHITE_BOLD" "$C_RESET"

@@ -15,6 +15,6 @@
       mkHost = import ./.lib/mkHost.nix { inherit inputs nixpkgs; };
     in
     {
-      nixosConfigurations = import ./hosts { inherit mkHost; };
+      nixosConfigurations = import ./hosts/config.nix { inherit mkHost; };
     };
 }
