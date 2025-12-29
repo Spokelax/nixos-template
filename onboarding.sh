@@ -322,6 +322,7 @@ main() {
                 if [ -z "$commit_msg" ]; then
                     commit_msg="$default_msg"
                 fi
+                git -C "$SCRIPT_DIR" add -A
                 git -C "$SCRIPT_DIR" commit -m "$commit_msg"
                 print_success "Changes committed"
             else
