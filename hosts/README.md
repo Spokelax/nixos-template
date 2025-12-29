@@ -6,12 +6,19 @@ VM-specific configuration.
 
 ## After Cloning a Template VM
 
-Run onboarding to set hostname and regenerate hardware config:
+1. Login with `default` / `pwd` (console or SSH)
+2. Run onboarding:
 
 ```bash
-cd /etc/nixos
-sudo ./onboarding.sh
+cd /etc/nixos && sudo ./onboarding.sh
 ```
+
+Onboarding will:
+
+- Set hostname
+- Create your user (password or SSH key)
+- Disable the default bootstrap user
+- Optionally disable password authentication
 
 &nbsp;
 

@@ -38,7 +38,11 @@ source "$SCRIPT_DIR/.lib/cli-utils/prompts.sh"
 
 NEW_HOSTNAME=""
 NEW_USERNAME=""
-CREATE_USER=false
+NEW_SSH_KEY=""
+NEW_PASSWORD_HASH=""
+AUTH_METHOD=""  # "password" or "sshkey"
+REPLACE_DEFAULT_USER=false
+DISABLE_PASSWORD_AUTH=false
 
 # ==============================================================================
 # Setup functions
@@ -91,7 +95,23 @@ EOF
 }
 
 create_config_nix() {
-    if [ "$CREATE_USER" = true ] && [ -n "$NEW_USERNAME" ]; then
+    if [ "$REPLACE_DEFAULT_USER" = true ]; then
+        # Build user config based on auth method
+        local user_auth_config=""
+        if [ "$AUTH_METHOD" = "sshkey" ]; then
+            user_auth_config="openssh.authorizedKeys.keys = [ \"$NEW_SSH_KEY\" ];"
+        else
+            user_auth_config="hashedPassword = \"$NEW_PASSWORD_HASH\";"
+        fi
+
+        # Build password auth config
+        local ssh_password_config=""
+        if [ "$DISABLE_PASSWORD_AUTH" = true ]; then
+            ssh_password_config="
+  # Disable password authentication (SSH key only)
+  services.openssh.settings.PasswordAuthentication = false;"
+        fi
+
         cat >"$HOSTS_DIR/config.nix" <<EOF
 # ============================================================================
 # Host Configuration
@@ -100,13 +120,18 @@ create_config_nix() {
 { ... }:
 
 {
-  # Bootstrap user: default / pwd
+  # Disable bootstrap user
+  users.users.default = {
+    isNormalUser = false;
+    hashedPassword = "!";  # Locked account
+  };
 
+  # Primary user
   users.users.$NEW_USERNAME = {
     isNormalUser = true;
     extraGroups = [ "wheel" ];
-    # openssh.authorizedKeys.keys = [ "ssh-ed25519 ..." ];
-  };
+    $user_auth_config
+  };$ssh_password_config
 }
 EOF
     else
@@ -118,12 +143,20 @@ EOF
 { ... }:
 
 {
-  # Bootstrap user: default / pwd
-
+  # Using bootstrap user: default / pwd
+  # Replace with your own user when ready:
+  #
+  # users.users.default = {
+  #   isNormalUser = false;
+  #   hashedPassword = "!";
+  # };
+  #
   # users.users.myuser = {
   #   isNormalUser = true;
   #   extraGroups = [ "wheel" ];
-  #   openssh.authorizedKeys.keys = [ "ssh-ed25519 ..." ];
+  #   hashedPassword = "...";  # Generate with: mkpasswd -m sha-512
+  #   # or use SSH key:
+  #   # openssh.authorizedKeys.keys = [ "ssh-ed25519 ..." ];
   # };
 }
 EOF
@@ -179,19 +212,75 @@ main() {
     fi
     print_success "Hostname: $NEW_HOSTNAME"
 
-    # User creation
+    # User setup
     printf "\n"
-    if prompt_yes_no "Create a user account?"; then
-        CREATE_USER=true
+    if prompt_yes_no "Replace default user with your own?"; then
+        REPLACE_DEFAULT_USER=true
+
+        # 3.1 Username
         NEW_USERNAME=$(prompt_input "Username")
-        if [ -n "$NEW_USERNAME" ]; then
-            print_success "Will create user: $NEW_USERNAME"
+        if [ -z "$NEW_USERNAME" ]; then
+            print_error "Username cannot be empty"
+            print_footer false "Setup failed"
+            exit 1
+        fi
+        print_success "Username: $NEW_USERNAME"
+
+        # 3.2 Auth method
+        printf "\n"
+        printf "  %sAuthentication method:%s\n" "$C_WHITE_BOLD" "$C_RESET"
+        printf "    %s1.%s Password\n" "$C_DIM" "$C_RESET"
+        printf "    %s2.%s SSH key only\n" "$C_DIM" "$C_RESET"
+        printf "\n"
+        local auth_choice
+        auth_choice=$(prompt_input "Select (1-2)" "1")
+
+        if [ "$auth_choice" = "2" ]; then
+            # 3.3b SSH key
+            AUTH_METHOD="sshkey"
+            printf "\n"
+            NEW_SSH_KEY=$(prompt_input "SSH public key (ssh-ed25519 ...)")
+            if [ -z "$NEW_SSH_KEY" ]; then
+                print_error "SSH key cannot be empty"
+                print_footer false "Setup failed"
+                exit 1
+            fi
+            print_success "SSH key configured"
+
+            # Ask about disabling password auth
+            printf "\n"
+            if prompt_yes_no "Disable SSH password authentication?"; then
+                DISABLE_PASSWORD_AUTH=true
+                print_success "Password auth will be disabled"
+            fi
         else
-            CREATE_USER=false
-            print_info "Skipped (empty username)"
+            # 3.3a Password
+            AUTH_METHOD="password"
+            printf "\n"
+            printf "  %sEnter password for %s:%s\n" "$C_DIM" "$NEW_USERNAME" "$C_RESET"
+            read -s -p "  Password: " user_password
+            printf "\n"
+            read -s -p "  Confirm:  " user_password_confirm
+            printf "\n"
+
+            if [ "$user_password" != "$user_password_confirm" ]; then
+                print_error "Passwords do not match"
+                print_footer false "Setup failed"
+                exit 1
+            fi
+
+            if [ -z "$user_password" ]; then
+                print_error "Password cannot be empty"
+                print_footer false "Setup failed"
+                exit 1
+            fi
+
+            # Hash password
+            NEW_PASSWORD_HASH=$(echo "$user_password" | mkpasswd -m sha-512 --stdin)
+            print_success "Password configured"
         fi
     else
-        print_info "Using bootstrap user only (default/pwd)"
+        print_info "Keeping default user (default/pwd)"
     fi
 
     # --------------------------------------------------------------------------

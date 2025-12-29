@@ -11,7 +11,7 @@
     enable = true;
     settings = {
       PermitRootLogin = lib.mkDefault "prohibit-password";
-      PasswordAuthentication = lib.mkDefault false;
+      PasswordAuthentication = lib.mkDefault true;
       KbdInteractiveAuthentication = false;
     };
     extraConfig = ''
