@@ -311,7 +311,7 @@ main() {
         print_info "Rebuilding system (this may take a few minutes)..."
         printf "\n"
 
-        if sudo nixos-rebuild switch --flake "$SCRIPT_DIR" --experimental-features "nix-command flakes"; then
+        if sudo nixos-rebuild switch --flake "$SCRIPT_DIR" --option experimental-features 'nix-command flakes'; then
             print_success "System configured successfully"
             print_footer true "Setup completed"
 
@@ -325,7 +325,7 @@ main() {
             print_footer false "Setup incomplete"
 
             printf "    %sTo retry:%s\n" "$C_WHITE_BOLD" "$C_RESET"
-            printf "    %ssudo nixos-rebuild switch --flake . --experimental-features \"nix-command flakes\"%s\n" "$C_DIM" "$C_RESET"
+            printf "    %ssudo nixos-rebuild switch --flake . --option experimental-features 'nix-command flakes'%s\n" "$C_DIM" "$C_RESET"
             printf "\n"
             exit 1
         fi
@@ -335,7 +335,7 @@ main() {
 
         printf "    %sTo apply manually:%s\n" "$C_WHITE_BOLD" "$C_RESET"
         printf "    %s1.%s Review hosts/config.nix\n" "$C_DIM" "$C_RESET"
-        printf "    %s2.%s Run: %ssudo nixos-rebuild switch --flake . --experimental-features \"nix-command flakes\"%s\n" "$C_DIM" "$C_RESET" "$C_WHITE_BOLD" "$C_RESET"
+        printf "    %s2.%s Run: %ssudo nixos-rebuild switch --flake . --option experimental-features 'nix-command flakes'%s\n" "$C_DIM" "$C_RESET" "$C_WHITE_BOLD" "$C_RESET"
         printf "    %s3.%s Future rebuilds: %srebuild%s\n" "$C_DIM" "$C_RESET" "$C_WHITE_BOLD" "$C_RESET"
         printf "\n"
     fi
