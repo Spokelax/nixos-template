@@ -7,7 +7,7 @@
 # 4. Stage: git add -A
 # 5. First rebuild:
 #      sudo nixos-rebuild switch --flake . --option experimental-features 'nix-command flakes'
-# 6. Future rebuilds: rebuild
+# 6. Future rebuilds: nixos-switch
 #     ---
 # ============================================================================
 

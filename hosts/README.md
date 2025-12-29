@@ -56,10 +56,10 @@ hosts/
 
 ## Adding Services
 
-Edit `config.nix` to add host-specific configuration, then rebuild:
+Edit `config.nix` to add host-specific configuration, then run:
 
 ```bash
-rebuild
+nixos-switch
 ```
 
 &nbsp;

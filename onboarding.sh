@@ -334,7 +334,7 @@ main() {
             printf "    %sNext steps:%s\n" "$C_WHITE_BOLD" "$C_RESET"
             printf "    %s1.%s Reboot if kernel was updated\n" "$C_DIM" "$C_RESET"
             printf "    %s2.%s Login as your user\n" "$C_DIM" "$C_RESET"
-            printf "    %s3.%s Future rebuilds: %srebuild%s\n" "$C_DIM" "$C_RESET" "$C_WHITE_BOLD" "$C_RESET"
+            printf "    %s3.%s Future rebuilds: %snixos-switch%s\n" "$C_DIM" "$C_RESET" "$C_WHITE_BOLD" "$C_RESET"
             printf "\n"
         else
             print_error "Rebuild failed"
@@ -352,7 +352,7 @@ main() {
         printf "    %sTo apply manually:%s\n" "$C_WHITE_BOLD" "$C_RESET"
         printf "    %s1.%s Review hosts/config.nix\n" "$C_DIM" "$C_RESET"
         printf "    %s2.%s Run: %ssudo nixos-rebuild switch --flake . --option experimental-features 'nix-command flakes'%s\n" "$C_DIM" "$C_RESET" "$C_WHITE_BOLD" "$C_RESET"
-        printf "    %s3.%s Future rebuilds: %srebuild%s\n" "$C_DIM" "$C_RESET" "$C_WHITE_BOLD" "$C_RESET"
+        printf "    %s3.%s Future rebuilds: %snixos-switch%s\n" "$C_DIM" "$C_RESET" "$C_WHITE_BOLD" "$C_RESET"
         printf "\n"
     fi
 }
